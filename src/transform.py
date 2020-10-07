@@ -1,71 +1,51 @@
+import json
+from uuid import uuid4 as get_uuid
 from src.extract import csv_import
 
-import pandas as pd
-import uuid
 
-def remove_duplicates(dict, list):  # Remove duplicated function
-    if dict not in list:
-        list.append(dict)
-
-def get_uuid():
-    return uuid.uuid4()
-
-# Customers table transform
-customers_list = []     # List of dictionaries to be created
-for row in csv_import:
-    dict = {}
-    name = row['Name'].split(' ')
-    dict['Customer_UUID'] = get_uuid()
-    dict['First name'] = name[0]
-    dict['Last name'] = name[1]
-    remove_duplicates(dict, customers_list)
+def _remove_duplicate_products(li: list) -> list:
+    dumped_set = set([json.dumps(d, sort_keys=True) for d in li])
+    return [json.loads(s) for s in dumped_set]
 
 
-# Products table transform 
-remove_list = ['Flavoured ', 'Speciality ', 'Iced ']  
-product_list = []
-for row in csv_import:   
-    order = row["Orders"].split(",")
+def create_product_list() -> list:
+    products = []
 
-    for i in range(0, len(order), 3):
-        dict = {}
+    for row in csv_import:
+        order = row["Orders"].split(",")
 
-        dict['Size'] = None if not order[i] else order[i]
+        for i in range(0, len(order), 3):
+            product = {}
 
-        if '-' in order[i + 1]:
-            product_split = order[i + 1].split(' - ')
-            dict['Name'] = product_split[0]
-            dict['Flavour'] = product_split[1]
-        else:
-            dict['Name'] = order[i + 1]
+            if "-" in order[i + 1]:
+                product_split = order[i + 1].split(" - ")
+                product["Name"] = product_split[0]
+                product["Flavour"] = product_split[1]
+            else:
+                product["Name"] = order[i + 1]
+                product["Flavour"] = "NULL"
 
-        for remove in remove_list:
-            if remove in dict['Name']:
-                dict['Name'] = dict['Name'].replace(remove, '').capitalize()
-                if remove == 'Iced':
-                    dict['is_iced'] = True
+            product["Size"] = None if not order[i] else order[i]
+            product["Price"] = float(order[i + 2])
 
+            product["Iced"] = False
+            for remove in ["Flavoured ", "Speciality ", "Iced "]:
+                if remove in product["Name"]:
+                    product["Name"] = product["Name"].replace(remove, "").capitalize()
+                    if remove == "Iced ":
+                        product["Iced"] = True
 
-        dict['Price'] = float(order[i + 2])
+            products.append(product)
 
-        remove_duplicates(dict, product_list)
-
-# Create flavours table
-flavours = []
-# for product in product_list:
-#     dict = {}
-#     if product['Flavour'] not in flavours:
-#         dict['Flavour'] = product['Flavour']
-#         flavours.append(product['Flavour'])
+    return [
+        dict(d, **{"Product_ID": get_uuid()})
+        for d in _remove_duplicate_products(products)
+    ]
 
 
-unique_products = {} # Unique product dictionary created
-for i in product_list:
-    existing = unique_products.get(i['Name'])
-    if not existing:
-        unique_products[i['Name']] = i['Price']
-    else:
-        if existing > i['Price']:
-            unique_products[i['Name']] = i['Price']
+if __name__ == "__main__":
+    products = create_product_list()
+    for p in products:
+        print(p)
 
-
+    print(len(products))
