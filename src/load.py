@@ -1,44 +1,33 @@
-from sqlalchemy import Table, Column, String, Integer, DECIMAL, create_engine, MetaData
-from sqlalchemy_utils import database_exists, create_database, CHAR
-from src.transform import unique_products, customer_list, flavours_list, get_uuid
+from sqlalchemy import create_engine, MetaData
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.engine import Engine
+from sqlalchemy_utils import database_exists, create_database
 
+from src.models import Base, Product, Location, Basket, Transaction
 
-db = create_engine('mysql+pymysql://root:password@localhost:33066/dev?charset=latin1')
-# Create database if it does not already exist
-if not database_exists(db.url):
-    create_database(db.url)
+# TODO from src.config import MYSQL_HOST, MYSQL_PORT, MYSQL_USER, MYSQL_PASSWORD
 
-meta = MetaData()
-db.connect()
+if __name__ == "__main__":
+    engine: Engine = create_engine(
+        "mysql+pymysql://root:password@localhost:33066/dev?charset=latin1"
+    )
+    # Create database if it does not already exist
+    if not database_exists(engine.url):
+        create_database(engine.url)
 
-customers_table = Table(
-    'customers', meta,
-    Column('UUID', CHAR(36), primary_key=True, unique=True),
-    Column('first_name', String(255), nullable=False),
-    Column('last_name', String(255), nullable=False)
-)
-products_table = Table(
-    'products', meta,
-    Column('UUID', CHAR(36), primary_key=True, unique=True),
-    Column('name', String(60), unique=True, nullable=False),
-    Column('price', DECIMAL(4, 2))
-)
-flavours_table = Table(
-    'flavours', meta,
-    Column('UUID', CHAR(36)), primary_key=True, unique=True),
-    Column('name', String(60), unique=True)
-)
+    engine.connect()
 
-meta.create_all(db)   # Creates all tables above in db 
+    Base.metadata.create_all(engine)
 
+    Session = sessionmaker(bind=engine)
+    session = Session()
 
-# Load tables 
-for key, value in unique_products.items():
-    products_sql = 'INSERT IGNORE INTO products (name, price) VALUES (%s, %s)'
-    db.execute(products_sql, (key, value))
+    from uuid import uuid4
 
-customers_sql = "INSERT IGNORE INTO customers (UUID, first_name, last_name) VALUES (%s, %s, %s)"
-db.execute(customers_sql, (customers_list))
+    product = Product(id=str(uuid4()), name="Lemonade", iced=False, price=1.25)
+    session.add(product)
 
-flavours_sql = "INSERT IGNORE INTO flavours (UUID, name) VALUES (%s, %s, %s)"
-db.execute(flavours_sql, (flavours_list))
+    # TODO Don't forget to commit
+
+    queried_product = session.query(Product).first()
+    print(queried_product.name)
