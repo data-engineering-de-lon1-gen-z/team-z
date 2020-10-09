@@ -4,7 +4,7 @@ from uuid import uuid4 as get_uuid
 from src.extract import csv_import
 
 
-def _remove_duplicate_products(li: list) -> list:
+def _deduplicate_products(li: list) -> list:
     dumped_set = set([json.dumps(d, sort_keys=True) for d in li])
     return [json.loads(s) for s in dumped_set]
 
@@ -37,7 +37,7 @@ def _basket(order: list) -> list:
     return result
 
 
-def _get_transactions() -> list:
+def get_transactions() -> list:
     transactions = []  # Each transaction contains a basket
 
     # TODO Each row is a new transaction
@@ -57,16 +57,16 @@ def _get_transactions() -> list:
     return transactions
 
 
-def _get_unique_products(transactions: list) -> list:
+def get_unique_products(transactions: list) -> list:
     return [
         dict(d, **{"Product_ID": get_uuid()})
-        for d in _remove_duplicate_products(
+        for d in _deduplicate_products(
             list(chain.from_iterable([d["Basket"] for d in transactions]))
         )
     ]
 
 
-def _get_locations(transactions: list) -> list:
+def get_locations(transactions: list) -> list:
     locations = [
         {"Location_ID": get_uuid(), "Name": location}
         for location in set(d["Location"] for d in transactions)
@@ -75,9 +75,9 @@ def _get_locations(transactions: list) -> list:
 
 
 if __name__ == "__main__":
-    transactions = _get_transactions()
-    unique_products = _get_unique_products(transactions)
-    locations = _get_locations(transactions)
+    transactions = get_transactions()
+    unique_products = get_unique_products(transactions)
+    locations = get_locations(transactions)
 
     print(f"Number of transactions: {len(transactions)}")
     print(f"Number of locations: {len(locations)}")
