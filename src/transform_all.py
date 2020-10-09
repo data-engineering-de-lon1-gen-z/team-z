@@ -66,11 +66,21 @@ def _get_unique_products(transactions: list) -> list:
     ]
 
 
+def _get_locations(transactions: list) -> list:
+    locations = [
+        {"Location_ID": get_uuid(), "Name": location}
+        for location in set(d["Location"] for d in transactions)
+    ]
+    return locations
+
+
 if __name__ == "__main__":
     transactions = _get_transactions()
     unique_products = _get_unique_products(transactions)
+    locations = _get_locations(transactions)
 
     print(f"Number of transactions: {len(transactions)}")
+    print(f"Number of locations: {len(locations)}")
     print(
         f"Number of drinks ordered: {sum([len(transaction['Basket']) for transaction in transactions])}"
     )
