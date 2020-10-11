@@ -5,7 +5,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.engine import Engine
 from sqlalchemy_utils import database_exists, create_database
 
-from src.models import Base, Product, Location, Basket, Transaction
+from src.models import Base, Product, Location, BasketItem, Transaction
 
 # TODO from src.config import MYSQL_HOST, MYSQL_PORT, MYSQL_USER, MYSQL_PASSWORD
 
@@ -13,6 +13,15 @@ engine: Engine = create_engine(
     "mysql+pymysql://root:password@localhost:33066/dev?charset=latin1"
 )
 Session = sessionmaker(bind=engine)
+
+
+def init():
+    # Create database if it does not already exist
+    if not database_exists(engine.url):
+        create_database(engine.url)
+
+    # Create all the tables
+    Base.metadata.create_all(engine)
 
 
 @contextmanager
@@ -33,12 +42,7 @@ def insert_many(session, data: list):
 
 
 if __name__ == "__main__":
-    # Create database if it does not already exist
-    if not database_exists(engine.url):
-        create_database(engine.url)
-
-    # Create all the tables
-    Base.metadata.create_all(engine)
+    init()
 
     from uuid import uuid4
 
