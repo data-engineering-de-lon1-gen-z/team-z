@@ -75,3 +75,6 @@ if __name__ == "__main__":
         f"Number of drinks ordered: {sum([len(transaction['Basket']) for transaction in transactions])}"
     )
     print(f"Number of unique products: {len(unique_products)}")
+
+    
+
