@@ -16,21 +16,21 @@ def _basket(order: list) -> list:
 
         if "-" in order[i + 1]:
             product_split = order[i + 1].split(" - ")
-            product["Name"] = product_split[0]
-            product["Flavour"] = product_split[1]
+            product["name"] = product_split[0]
+            product["flavour"] = product_split[1]
         else:
-            product["Name"] = order[i + 1]
-            product["Flavour"] = "NULL"
+            product["name"] = order[i + 1]
+            product["flavour"] = "NULL"
 
-        product["Size"] = None if not order[i] else order[i]
-        product["Price"] = float(order[i + 2])
+        product["size"] = None if not order[i] else order[i]
+        product["price"] = float(order[i + 2])
 
-        product["Iced"] = False
+        product["iced"] = False
         for remove in ["Flavoured ", "Speciality ", "Iced "]:
-            if remove in product["Name"]:
-                product["Name"] = product["Name"].replace(remove, "").capitalize()
+            if remove in product["name"]:
+                product["name"] = product["name"].replace(remove, "").capitalize()
                 if remove == "Iced ":
-                    product["Iced"] = True
+                    product["iced"] = True
 
         result.append(product)
 
@@ -47,10 +47,10 @@ def get_transactions() -> list:
 
         transactions.append(
             {
-                "Transaction_ID": get_uuid(),
-                "Basket": basket,
-                "DateTime": row["Timestamp"],
-                "Location": row["Location"],
+                "id": str(get_uuid()),
+                "basket": basket,
+                "datetime": row["Timestamp"],
+                "location": row["Location"],
             }
         )
 
@@ -59,17 +59,17 @@ def get_transactions() -> list:
 
 def get_unique_products(transactions: list) -> list:
     return [
-        dict(d, **{"Product_ID": get_uuid()})
+        dict(d, **{"id": str(get_uuid())})
         for d in _deduplicate_products(
-            list(chain.from_iterable([d["Basket"] for d in transactions]))
+            list(chain.from_iterable([d["basket"] for d in transactions]))
         )
     ]
 
 
 def get_locations(transactions: list) -> list:
     locations = [
-        {"Location_ID": get_uuid(), "Name": location}
-        for location in set(d["Location"] for d in transactions)
+        {"id": str(get_uuid()), "name": location}
+        for location in set(d["location"] for d in transactions)
     ]
     return locations
 
@@ -82,6 +82,6 @@ if __name__ == "__main__":
     print(f"Number of transactions: {len(transactions)}")
     print(f"Number of locations: {len(locations)}")
     print(
-        f"Number of drinks ordered: {sum([len(transaction['Basket']) for transaction in transactions])}"
+        f"Number of drinks ordered: {sum([len(transaction['basket']) for transaction in transactions])}"
     )
     print(f"Number of unique products: {len(unique_products)}")

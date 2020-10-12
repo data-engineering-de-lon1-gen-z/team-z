@@ -9,7 +9,7 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
 )
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, backref
 from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()
@@ -19,30 +19,34 @@ class Product(Base):
     __tablename__ = "product"
 
     id = Column(String(36), primary_key=True)
-    name = Column(String(255), unique=True, nullable=False)
+    name = Column(String(255), nullable=False)
     size = Column(String(255))
     flavour = Column(String(255))
     iced = Column(Boolean, nullable=False)
     price = Column(DECIMAL(4, 2), nullable=False)
-    baskets = relationship("Basket")
 
 
-# TODO Also store the address?
 class Location(Base):
     __tablename__ = "location"
 
-    id = Column(Integer, primary_key=True)
+    id = Column(String(36), primary_key=True)
     name = Column(String(255), unique=True, nullable=False)
     transactions = relationship("Transaction")
 
 
-class Basket(Base):
+class BasketItem(Base):
     __tablename__ = "basket"
 
     id = Column(String(36), primary_key=True)
-    transaction = relationship("Transaction", uselist=False, back_populates="basket")
+    transaction_id = Column(String(36), ForeignKey("transaction.id"), nullable=False)
     product_id = Column(String(36), ForeignKey("product.id"), nullable=False)
     quantity = Column(Integer, nullable=False)
+    transaction = relationship(
+        "Transaction",
+        backref=backref("basket", uselist=True),
+        foreign_keys="BasketItem.transaction_id",
+    )
+    products = relationship("Product", backref=backref("basket", uselist=True))
 
 
 class Transaction(Base):
@@ -50,6 +54,4 @@ class Transaction(Base):
 
     id = Column(String(36), primary_key=True)
     datetime = Column(DateTime, nullable=False)
-    location_id = Column(Integer, ForeignKey("location.id"), nullable=False)
-    basket_id = Column(String(36), ForeignKey("basket.id"), nullable=False)
-    basket = relationship("Basket", back_populates="transaction")
+    location_id = Column(String(36), ForeignKey("location.id"), nullable=False)
