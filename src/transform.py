@@ -26,7 +26,7 @@ def _deduplicate_products(li: list) -> list:
     return [json.loads(s) for s in dumped_set]
 
 
-def _basket(order: list) -> list:
+def get_basket(order: list) -> list:
     """
     Split the orders section of a transaction into a list of dict containing
     name, flavour, size, price and iced keys and values
@@ -92,9 +92,9 @@ def get_transactions() -> list:
 
     for row in csv_import:
         # Split the comma delimited order section and pass that into the
-        # `_basket()` function
+        # `get_basket()` function
         order = row["Orders"].split(",")
-        basket = _basket(order)
+        basket = get_basket(order)
 
         transactions.append(
             {
