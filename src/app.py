@@ -19,41 +19,46 @@ def _dict_without_key(d, key):
 if __name__ == "__main__":
 
     transactions = get_transactions()
-    locations = get_locations(transactions)
-    products = get_unique_products(transactions)
-
-    basket_items = []
-    for d in transactions:
-        basket_items += (
-            x
-            for x in set(
-                BasketItem(
-                    id=str(get_uuid()),
-                    transaction_id=d["id"],
-                    product_id=next(
-                        x for x in products if b == _dict_without_key(x, "id")
-                    )["id"],
-                    quantity=d["basket"].count(b),
-                )
-                for b in d["basket"]
-            )
-        )
-
-    transactions = [
-        Transaction(
-            id=d["id"],
-            datetime=d["datetime"],
-            location_id=next(x for x in locations if d["location"] == x["name"])["id"],
-        )
-        for d in transactions
-    ]
-
-    products = [Product(**d) for d in products]
-    locations = [Location(**d) for d in locations]
+    products = [Product(**d) for d in get_unique_products(transactions)]
+    locations = [Location(**d) for d in get_locations(transactions)]
 
     init()
-    with session_context_manager() as session:
+    with session_context_manager(ignore_tables=["location", "product"]) as session:
         insert_many(session, products)
         insert_many(session, locations)
+
+        basket_items = []
+        for d in transactions:
+            basket_items += (
+                x
+                for x in set(
+                    BasketItem(
+                        id=str(get_uuid()),
+                        transaction_id=d["id"],
+                        product_id=session.query(Product.id)
+                        .filter_by(
+                            name=b["name"],
+                            flavour=b["flavour"],
+                            size=b["size"],
+                            iced=b["iced"],
+                        )
+                        .as_scalar(),
+                        quantity=d["basket"].count(b),
+                    )
+                    for b in d["basket"]
+                )
+            )
+
+        transactions = [
+            Transaction(
+                id=d["id"],
+                datetime=d["datetime"],
+                location_id=session.query(Location.id)
+                .filter_by(name=d["location"])
+                .as_scalar(),
+            )
+            for d in transactions
+        ]
+
         insert_many(session, transactions)
         insert_many(session, basket_items)
