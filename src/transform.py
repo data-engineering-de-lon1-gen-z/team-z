@@ -20,15 +20,19 @@ def _basket(order: list) -> list:
             product["flavour"] = product_split[1]
         else:
             product["name"] = order[i + 1]
-            product["flavour"] = "NULL"
+            product["flavour"] = None
 
         product["size"] = None if not order[i] else order[i]
         product["price"] = float(order[i + 2])
 
+        product["name"] = product["name"].title()
+        if product["flavour"]:
+            product["flavour"] = product["flavour"].title()
+
         product["iced"] = False
         for remove in ["Flavoured ", "Speciality ", "Iced "]:
             if remove in product["name"]:
-                product["name"] = product["name"].replace(remove, "").capitalize()
+                product["name"] = product["name"].replace(remove, "")
                 if remove == "Iced ":
                     product["iced"] = True
 
