@@ -20,9 +20,9 @@ def _basket(order: list) -> list:
             product["flavour"] = product_split[1]
         else:
             product["name"] = order[i + 1]
-            product["flavour"] = "NULL"
+            product["flavour"] = ""
 
-        product["size"] = None if not order[i] else order[i]
+        product["size"] = "" if not order[i] else order[i]
         product["price"] = float(order[i + 2])
 
         product["iced"] = False
