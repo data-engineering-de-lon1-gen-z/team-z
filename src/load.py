@@ -1,9 +1,10 @@
 from contextlib import contextmanager
 
-from sqlalchemy import create_engine, MetaData
+from sqlalchemy import create_engine, MetaData, event
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.engine import Engine
 from sqlalchemy_utils import database_exists, create_database
+from sqlalchemy.sql import Insert
 
 from src.models import Base, Product, Location, BasketItem, Transaction
 
@@ -24,10 +25,27 @@ def init():
     Base.metadata.create_all(engine)
 
 
+@event.listens_for(Engine, "before_execute", retval=True)
+def _ignore_duplicate(conn, element, multiparams, params):
+    if (
+        isinstance(element, Insert)
+        and "ignore_tables" in conn.info
+        and element.table.name in conn.info["ignore_tables"]
+    ):
+        element = element.prefix_with("IGNORE")
+    return element, multiparams, params
+
+
 @contextmanager
-def session_context_manager():
+def session_context_manager(ignore_tables=[]):
     session = Session()
+    conn = session.connection()
+    info = conn.info
+
+    previous = info.get("ignore_tables", ())
+
     try:
+        info["ignore_tables"] = set(ignore_tables)
         yield session
         session.commit()
     except:
