@@ -168,6 +168,7 @@ if __name__ == "__main__":
     # #print(flavoured_teas)
     # #print(len(flavoured_teas))
     # #print(count)
+    flavoured_hot_chocolates = get_flavoured_drink(flavours, "Hot chocolate")
 
 
     # plt.rcdefaults()
