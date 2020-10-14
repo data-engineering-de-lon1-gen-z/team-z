@@ -16,16 +16,21 @@ services:
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: "password"
+    volumes:
+      - db-data:/var/lib/mysql
     ports:
       - 33066:3306
 
   grafana:
     image: grafana/grafana
-    container_name: grafana_container
+    volumes:
+      - grafana-data:/var/lib/grafana
     ports:
       - 8000:3000
 
 
 
     
-
+volumes:
+  db-data:
+  grafana-data:

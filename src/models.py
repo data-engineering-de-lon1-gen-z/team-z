@@ -18,7 +18,7 @@ Base = declarative_base()
 
 class Product(Base):
     __tablename__ = "product"
-    id = Column(String(36), primary_key=True)
+    id = Column(uuid(), primary_key=True)
     name = Column(String(255), nullable=False)
     size = Column(String(255), nullable=False)
     flavour = Column(String(255), nullable=False)
@@ -31,7 +31,7 @@ class Product(Base):
 class Location(Base):
     __tablename__ = "location"
 
-    id = Column(String(36), primary_key=True)
+    id = Column(uuid(), primary_key=True)
     name = Column(String(255), unique=True, nullable=False)
     transactions = relationship("Transaction")
 
@@ -39,9 +39,9 @@ class Location(Base):
 class BasketItem(Base):
     __tablename__ = "basket"
 
-    id = Column(String(36), primary_key=True)
-    transaction_id = Column(String(36), ForeignKey("transaction.id"), nullable=False)
-    product_id = Column(String(36), ForeignKey("product.id"), nullable=False)
+    id = Column(uuid(), primary_key=True)
+    transaction_id = Column(uuid(), ForeignKey("transaction.id"), nullable=False)
+    product_id = Column(uuid(), ForeignKey("product.id"), nullable=False)
     quantity = Column(Integer, nullable=False)
     transaction = relationship(
         "Transaction",
@@ -54,6 +54,6 @@ class BasketItem(Base):
 class Transaction(Base):
     __tablename__ = "transaction"
 
-    id = Column(String(36), primary_key=True)
+    id = Column(uuid(), primary_key=True)
     datetime = Column(DateTime, nullable=False)
-    location_id = Column(String(36), ForeignKey("location.id"), nullable=False)
+    location_id = Column(uuid(), ForeignKey("location.id"), nullable=False)
