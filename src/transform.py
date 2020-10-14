@@ -1,12 +1,5 @@
-import json
-from itertools import chain
 from uuid import uuid4 as get_uuid
 from src.extract import csv_import
-
-
-def _deduplicate_products(li: list) -> list:
-    dumped_set = set([json.dumps(d, sort_keys=True) for d in li])
-    return [json.loads(s) for s in dumped_set]
 
 
 def _basket(order: list) -> list:
@@ -41,7 +34,7 @@ def _basket(order: list) -> list:
     return result
 
 
-def get_transactions() -> list:
+def get_raw_transactions() -> list:
     transactions = []  # Each transaction contains a basket
 
     # TODO Each row is a new transaction
@@ -61,31 +54,6 @@ def get_transactions() -> list:
     return transactions
 
 
-def get_unique_products(transactions: list) -> list:
-    return [
-        dict(d, **{"id": str(get_uuid())})
-        for d in _deduplicate_products(
-            list(chain.from_iterable([d["basket"] for d in transactions]))
-        )
-    ]
-
-
-def get_locations(transactions: list) -> list:
-    locations = [
-        {"id": str(get_uuid()), "name": location}
-        for location in set(d["location"] for d in transactions)
-    ]
-    return locations
-
-
 if __name__ == "__main__":
-    transactions = get_transactions()
-    unique_products = get_unique_products(transactions)
-    locations = get_locations(transactions)
-
+    transactions = get_raw_transactions()
     print(f"Number of transactions: {len(transactions)}")
-    print(f"Number of locations: {len(locations)}")
-    print(
-        f"Number of drinks ordered: {sum([len(transaction['basket']) for transaction in transactions])}"
-    )
-    print(f"Number of unique products: {len(unique_products)}")
