@@ -1,3 +1,6 @@
+import json
+from uuid import uuid4 as get_uuid
+from itertools import chain
 from contextlib import contextmanager
 
 from sqlalchemy import create_engine, MetaData, event
@@ -10,24 +13,89 @@ from src.models import Base, Product, Location, BasketItem, Transaction
 
 # TODO from src.config import MYSQL_HOST, MYSQL_PORT, MYSQL_USER, MYSQL_PASSWORD
 
-engine: Engine = create_engine(
-    "mysql+pymysql://root:password@localhost:33066/dev?charset=latin1"
-)
+engine: Engine = create_engine("mysql+pymysql://root:password@localhost:33066/dev")
 Session = sessionmaker(bind=engine)
 
 
-def init():
+def _deduplicate_products(li: list) -> list:
+    dumped_set = set([json.dumps(d, sort_keys=True) for d in li])
+    return [json.loads(s) for s in dumped_set]
+
+
+def get_unique_products(transactions: list) -> list:
     """
-    Initialize the database by creating the database if it does not already
-    exist & create all the defined tables
+    Extract a list of unique products from the transactions list. Each
+    product is assigned a UUID string
+
+    Returns
+    -------
+    list
+        A list containing the unique products as dictionaries
     """
 
-    # Create database if it does not already exist
-    if not database_exists(engine.url):
-        create_database(engine.url)
+    return [
+        Product(**dict(d, **{"id": str(get_uuid())}))
+        for d in _deduplicate_products(
+            list(chain.from_iterable([d["basket"] for d in transactions]))
+        )
+    ]
 
-    # Create all the tables
-    Base.metadata.create_all(engine)
+
+def get_locations(transactions: list) -> list:
+    """
+    Extract a list of unique locations from the transactions list. Each
+    location is assigned a UUID string
+
+    Returns
+    -------
+    list
+        A list containing the unique locations as dictionaries
+    """
+
+    locations = [
+        Location(id=str(get_uuid()), name=location)
+        for location in set(d["location"] for d in transactions)
+    ]
+    return locations
+
+
+def get_basket_items(session, transactions: list) -> list:
+    basket_items = []
+    for d in transactions:
+        basket_items += (
+            x
+            for x in set(
+                BasketItem(
+                    id=str(get_uuid()),
+                    transaction_id=d["id"],
+                    product_id=session.query(Product.id)
+                    .filter_by(
+                        name=b["name"],
+                        flavour=b["flavour"],
+                        size=b["size"],
+                        iced=b["iced"],
+                    )
+                    .as_scalar(),
+                    quantity=d["basket"].count(b),
+                )
+                for b in d["basket"]
+            )
+        )
+
+    return basket_items
+
+
+def get_transactions(session, raw_transactions: list) -> list:
+    return [
+        Transaction(
+            id=d["id"],
+            datetime=d["datetime"],
+            location_id=session.query(Location.id)
+            .filter_by(name=d["location"])
+            .as_scalar(),
+        )
+        for d in raw_transactions
+    ]
 
 
 # Listens for any before_execute event from SQLAlchemy
@@ -91,6 +159,17 @@ def session_context_manager(ignore_tables=[]):
         session.close()
 
 
+def init():
+    """
+    Initialize the database by creating the database if it does not already
+    exist & create all the defined tables
+    """
+
+    # Create database if it does not already exist
+    if not database_exists(engine.url):
+        create_database(engine.url)
+
+
 def insert_many(session, *argv):
     """
     Insert many rows into the database, each arg given must be an iterable
@@ -104,17 +183,3 @@ def insert_many(session, *argv):
 
     for data in argv:
         session.add_all(data)
-
-
-if __name__ == "__main__":
-    init()
-
-    from uuid import uuid4
-
-    product = Product(id=str(uuid4()), name="Lemonade", iced=False, price=1.25)
-    with session_context_manager() as session:
-        insert_many(session, [product])
-
-        # Select query on product table, get the first result
-        queried_product = session.query(Product).first()
-        print(queried_product.name)
