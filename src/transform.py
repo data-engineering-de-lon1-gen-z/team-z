@@ -1,20 +1,9 @@
 import json
-from itertools import chain
 from uuid import uuid4 as get_uuid
 from src.extract import csv_import
 
 
-# Deduplicates the products list so we are left with a list of unique products
-def _deduplicate_products(li: list) -> list:
-
-    # The dictionary is encoded serialized into json formar and placed into a
-    # set which cannot contain duplicate entries
-    # Each json string is then transformed back into a dictionary and returned
-    dumped_set = set([json.dumps(d, sort_keys=True) for d in li])
-    return [json.loads(s) for s in dumped_set]
-
-
-def get_basket(order: list) -> list:
+def _basket(order: list) -> list:
     """
     Split the orders section of a transaction into a list of dict containing
     name, flavour, size, price and iced keys and values
@@ -68,7 +57,7 @@ def get_basket(order: list) -> list:
     return result
 
 
-def get_transactions() -> list:
+def get_raw_transactions() -> list:
     """
     Transform and clean the raw data from the CSV file into a list of transactions
     in which we are able to find unique products and locations. Each transaction
@@ -86,7 +75,7 @@ def get_transactions() -> list:
         # Split the comma delimited order section and pass that into the
         # `get_basket()` function
         order = row["Orders"].split(",")
-        basket = get_basket(order)
+        basket = _basket(order)
 
         transactions.append(
             {
@@ -94,62 +83,13 @@ def get_transactions() -> list:
                 "basket": basket,
                 "datetime": row["Timestamp"],
                 "location": row["Location"],
+                "payment_type": row["Payment Type"],
             }
         )
 
     return transactions
 
 
-def get_unique_products(transactions: list) -> list:
-    """
-    Extract a list of unique products from the transactions list. Each
-    product is assigned a UUID string
-
-    Returns
-    -------
-    list
-        A list containing the unique products as dictionaries
-    """
-
-    return [
-        # Add UUID string to each basket
-        dict(d, **{"id": str(get_uuid())})
-        # Create one giant list of products and deduplicate the list so we end
-        # up only with the unique products
-        for d in _deduplicate_products(
-            list(chain.from_iterable([d["basket"] for d in transactions]))
-        )
-    ]
-
-
-def get_locations(transactions: list) -> list:
-    """
-    Extract a list of unique locations from the transactions list. Each
-    location is assigned a UUID string
-
-    Returns
-    -------
-    list
-        A list containing the unique locations as dictionaries
-    """
-
-    return [
-        {
-            "id": str(get_uuid()),
-            "name": location,
-        }
-        for location in set(d["location"] for d in transactions)
-    ]
-
-
 if __name__ == "__main__":
-    transactions = get_transactions()
-    unique_products = get_unique_products(transactions)
-    locations = get_locations(transactions)
-
+    transactions = get_raw_transactions()
     print(f"Number of transactions: {len(transactions)}")
-    print(f"Number of locations: {len(locations)}")
-    print(
-        f"Number of drinks ordered: {sum([len(transaction['basket']) for transaction in transactions])}"
-    )
-    print(f"Number of unique products: {len(unique_products)}")
