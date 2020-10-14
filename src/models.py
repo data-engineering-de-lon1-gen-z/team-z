@@ -21,7 +21,7 @@ class PaymentType(enum.Enum):
     card = 1
     cash = 2
 
-    # Create PaymentType objects from string
+    # Create PaymentType objects from String
     # Expects "CARD" or "CASH" as defined in the sample data
     @staticmethod
     def from_str(label):
@@ -74,4 +74,6 @@ class Transaction(Base):
     id = Column(String(36), primary_key=True)
     datetime = Column(DateTime, nullable=False)
     payment_type = Column(Enum(PaymentType), nullable=False)
+    card_details = Column(String(36), nullable=True)
     location_id = Column(String(36), ForeignKey("location.id"), nullable=False)
+
