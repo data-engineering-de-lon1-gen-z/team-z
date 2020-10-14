@@ -16,11 +16,9 @@ if __name__ == "__main__":
 
     init()
     with session_context_manager(ignore_tables=["location", "product"]) as session:
-        insert_many(session, products)
-        insert_many(session, locations)
+        insert_many(session, products, locations)
 
         basket_items = get_basket_items(session, transactions)
         transactions = get_transactions(session, transactions)
 
-        insert_many(session, transactions)
-        insert_many(session, basket_items)
+        insert_many(session, transactions, basket_items)

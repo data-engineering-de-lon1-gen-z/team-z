@@ -23,6 +23,16 @@ def _deduplicate_products(li: list) -> list:
 
 
 def get_unique_products(transactions: list) -> list:
+    """
+    Extract a list of unique products from the transactions list. Each
+    product is assigned a UUID string
+
+    Returns
+    -------
+    list
+        A list containing the unique products as dictionaries
+    """
+
     return [
         Product(**dict(d, **{"id": str(get_uuid())}))
         for d in _deduplicate_products(
@@ -32,6 +42,16 @@ def get_unique_products(transactions: list) -> list:
 
 
 def get_locations(transactions: list) -> list:
+    """
+    Extract a list of unique locations from the transactions list. Each
+    location is assigned a UUID string
+
+    Returns
+    -------
+    list
+        A list containing the unique locations as dictionaries
+    """
+
     locations = [
         Location(id=str(get_uuid()), name=location)
         for location in set(d["location"] for d in transactions)
@@ -78,44 +98,88 @@ def get_transactions(session, raw_transactions: list) -> list:
     ]
 
 
+# Listens for any before_execute event from SQLAlchemy
 @event.listens_for(Engine, "before_execute", retval=True)
 def _ignore_duplicate(conn, element, multiparams, params):
+    # We only want to find any event which contains `ignore_tables` key in connection.info
     if (
         isinstance(element, Insert)
         and "ignore_tables" in conn.info
         and element.table.name in conn.info["ignore_tables"]
     ):
+        # Prefix the query with IGNORE so that we can ignore duplicate inserts rather than
+        # raising exception
         element = element.prefix_with("IGNORE")
     return element, multiparams, params
 
 
 @contextmanager
 def session_context_manager(ignore_tables=[]):
+    """
+    Context manager for SQLAlchemy session object, automatically commit changes
+    and perform rollbacks on exception and close the connection
+
+    Parameters
+    ----------
+    ignore_Tables: list
+        A list of table names that use `INSERT IGNORE`
+
+    Yields
+    -------
+    session
+        SQLAlchemy Session object
+
+    Example
+    -------
+    person = Person(id=uuid4(), first_name="John", last_name="Wrightson")
+    with session_context_manager() as session:
+        session.add(person)
+    """
+
     session = Session()
     conn = session.connection()
     info = conn.info
 
+    # Get the original ignore_tables dict object to be restored before `session.close()`
     previous = info.get("ignore_tables", ())
 
     try:
+        # Set the ignore_tables from the `ignore_tables` param, for session block
         info["ignore_tables"] = set(ignore_tables)
+        # Yield the session object to be used in the with statement
         yield session
+        # When session exits scope without exception, the session is commited
         session.commit()
     except:
+        # On exception, rollback any changes before raising the exception
         session.rollback()
         raise
     finally:
+        # Always close the connection
         session.close()
 
 
 def init():
+    """
+    Initialize the database by creating the database if it does not already
+    exist & create all the defined tables
+    """
+
     # Create database if it does not already exist
     if not database_exists(engine.url):
         create_database(engine.url)
 
-    # Create all the tables
-    Base.metadata.create_all(engine)
 
+def insert_many(session, *argv):
+    """
+    Insert many rows into the database, each arg given must be an iterable
+    containing some valid ORM class
 
-def insert_many(session, data: list):
-    session.add_all(data)
+    Parameters
+    ----------
+    session: Session
+        The session object obtained from the `session_context_manager()` function
+    """
+
+    for data in argv:
+        session.add_all(data)

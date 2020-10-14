@@ -1,12 +1,40 @@
+import json
 from uuid import uuid4 as get_uuid
 from src.extract import csv_import
 
 
+# Deduplicates the products list so we are left with a list of unique products
+def _deduplicate_products(li: list) -> list:
+
+    # The dictionary is encoded serialized into json formar and placed into a
+    # set which cannot contain duplicate entries
+    # Each json string is then transformed back into a dictionary and returned
+    dumped_set = set([json.dumps(d, sort_keys=True) for d in li])
+    return [json.loads(s) for s in dumped_set]
+
+
 def _basket(order: list) -> list:
+    """
+    Split the orders section of a transaction into a list of dict containing
+    name, flavour, size, price and iced keys and values
+
+    Parameters
+    ----------
+    order: list
+        The order section of the transaction split at the comma delimiter
+
+    Returns
+    -------
+    list
+        A basket which contains all products purchased in this transaction
+    """
+
     result = []
     for i in range(0, len(order), 3):
         product = {}
 
+        # If name section in the order string contains the dash character, then
+        # there is usually a flavour included.
         if "-" in order[i + 1]:
             product_split = order[i + 1].split(" - ")
             product["name"] = product_split[0]
@@ -15,17 +43,22 @@ def _basket(order: list) -> list:
             product["name"] = order[i + 1]
             product["flavour"] = ""
 
+        # If the size section is empty then we just leave it set to `None`
         product["size"] = "" if not order[i] else order[i]
         product["price"] = float(order[i + 2])
 
+        # The name and flavour should be capitalized
         product["name"] = product["name"].title()
         if product["flavour"]:
             product["flavour"] = product["flavour"].title()
 
+        # Default to non-iced
         product["iced"] = False
+        # Remove these sections from the name
         for remove in ["Flavoured ", "Speciality ", "Iced "]:
             if remove in product["name"]:
                 product["name"] = product["name"].replace(remove, "")
+                # If we are removing Iced then toggle the dictionary entry `iced`
                 if remove == "Iced ":
                     product["iced"] = True
 
@@ -35,10 +68,22 @@ def _basket(order: list) -> list:
 
 
 def get_raw_transactions() -> list:
+    """
+    Transform and clean the raw data from the CSV file into a list of transactions
+    in which we are able to find unique products and locations. Each transaction
+    is assigned a UUID string
+
+    Returns
+    -------
+    list
+        A list of transactions along with the basket of items purchased in the transaction.
+    """
+
     transactions = []  # Each transaction contains a basket
 
-    # TODO Each row is a new transaction
     for row in csv_import:
+        # Split the comma delimited order section and pass that into the
+        # `get_basket()` function
         order = row["Orders"].split(",")
         basket = _basket(order)
 
