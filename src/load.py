@@ -9,7 +9,7 @@ from sqlalchemy.engine import Engine
 from sqlalchemy_utils import database_exists, create_database
 from sqlalchemy.sql import Insert
 
-from src.models import Base, Product, Location, BasketItem, Transaction
+from src.models import Base, Product, Location, BasketItem, PaymentType, Transaction
 
 # TODO from src.config import MYSQL_HOST, MYSQL_PORT, MYSQL_USER, MYSQL_PASSWORD
 
@@ -17,7 +17,12 @@ engine: Engine = create_engine("mysql+pymysql://root:password@localhost:33066/de
 Session = sessionmaker(bind=engine)
 
 
+# Deduplicates the products list so we are left with a list of unique products
 def _deduplicate_products(li: list) -> list:
+
+    # The dictionary is encoded serialized into json formar and placed into a
+    # set which cannot contain duplicate entries
+    # Each json string is then transformed back into a dictionary and returned
     dumped_set = set([json.dumps(d, sort_keys=True) for d in li])
     return [json.loads(s) for s in dumped_set]
 
@@ -90,6 +95,7 @@ def get_transactions(session, raw_transactions: list) -> list:
         Transaction(
             id=d["id"],
             datetime=d["datetime"],
+            payment_type=PaymentType.from_str(d["payment_type"]),
             location_id=session.query(Location.id)
             .filter_by(name=d["location"])
             .as_scalar(),
@@ -169,6 +175,9 @@ def init():
     if not database_exists(engine.url):
         create_database(engine.url)
 
+    # Create all the tables
+    Base.metadata.create_all(engine)
+
 
 def insert_many(session, *argv):
     """
@@ -180,6 +189,5 @@ def insert_many(session, *argv):
     session: Session
         The session object obtained from the `session_context_manager()` function
     """
-
     for data in argv:
         session.add_all(data)

@@ -1,3 +1,4 @@
+import enum
 from sqlalchemy import (
     Table,
     Column,
@@ -14,6 +15,22 @@ from sqlalchemy.orm import relationship, backref
 from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()
+
+# Define the Enum type
+class PaymentType(enum.Enum):
+    card = 1
+    cash = 2
+
+    # Create PaymentType objects from string
+    # Expects "CARD" or "CASH" as defined in the sample data
+    @staticmethod
+    def from_str(label):
+        if label in "CARD":
+            return PaymentType.card
+        elif label in "CASH":
+            return PaymentType.cash
+        else:
+            raise NotImplementedError
 
 
 class Product(Base):
@@ -56,4 +73,5 @@ class Transaction(Base):
 
     id = Column(String(36), primary_key=True)
     datetime = Column(DateTime, nullable=False)
+    payment_type = Column(Enum(PaymentType), nullable=False)
     location_id = Column(String(36), ForeignKey("location.id"), nullable=False)
