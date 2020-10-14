@@ -4,20 +4,8 @@ from uuid import uuid4 as get_uuid
 from src.extract import csv_import
 
 
+# Deduplicates the products list so we are left with a list of unique products
 def _deduplicate_products(li: list) -> list:
-    """
-    Deduplicates the products list so we are left with a list of unique products
-
-    Parameters
-    ----------
-    li: list
-        The unsanitary list of products
-
-    Returns
-    -------
-    list
-        A list of unique products
-    """
 
     # The dictionary is encoded serialized into json formar and placed into a
     # set which cannot contain duplicate entries
@@ -54,19 +42,23 @@ def get_basket(order: list) -> list:
             product["flavour"] = product_split[1]
         else:
             product["name"] = order[i + 1]
-            product["flavour"] = "NULL"
+            product["flavour"] = ""
 
         # If the size section is empty then we just leave it set to `None`
-        product["size"] = None if not order[i] else order[i]
+        product["size"] = "" if not order[i] else order[i]
         product["price"] = float(order[i + 2])
+
+        # The name and flavour should be capitalized
+        product["name"] = product["name"].title()
+        if product["flavour"]:
+            product["flavour"] = product["flavour"].title()
 
         # Default to non-iced
         product["iced"] = False
         # Remove these sections from the name
         for remove in ["Flavoured ", "Speciality ", "Iced "]:
             if remove in product["name"]:
-                # The name should be capitalized
-                product["name"] = product["name"].replace(remove, "").capitalize()
+                product["name"] = product["name"].replace(remove, "")
                 # If we are removing Iced then toggle the dictionary entry `iced`
                 if remove == "Iced ":
                     product["iced"] = True

@@ -1,9 +1,10 @@
 from contextlib import contextmanager
 
-from sqlalchemy import create_engine, MetaData
+from sqlalchemy import create_engine, MetaData, event
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.engine import Engine
 from sqlalchemy_utils import database_exists, create_database
+from sqlalchemy.sql import Insert
 
 from src.models import Base, Product, Location, BasketItem, Transaction
 
@@ -29,11 +30,36 @@ def init():
     Base.metadata.create_all(engine)
 
 
+# Listens for any before_execute event from SQLAlchemy
+@event.listens_for(Engine, "before_execute", retval=True)
+def _ignore_duplicate(conn, element, multiparams, params):
+    # We only want to find any event which contains `ignore_tables` key in connection.info
+    if (
+        isinstance(element, Insert)
+        and "ignore_tables" in conn.info
+        and element.table.name in conn.info["ignore_tables"]
+    ):
+        # Prefix the query with IGNORE so that we can ignore duplicate inserts rather than
+        # raising exception
+        element = element.prefix_with("IGNORE")
+    return element, multiparams, params
+
+
 @contextmanager
-def session_context_manager():
+def session_context_manager(ignore_tables=[]):
     """
     Context manager for SQLAlchemy session object, automatically commit changes
     and perform rollbacks on exception and close the connection
+
+    Parameters
+    ----------
+    ignore_Tables: list
+        A list of table names that use `INSERT IGNORE`
+
+    Yields
+    -------
+    session
+        SQLAlchemy Session object
 
     Example
     -------
@@ -43,7 +69,15 @@ def session_context_manager():
     """
 
     session = Session()
+    conn = session.connection()
+    info = conn.info
+
+    # Get the original ignore_tables dict object to be restored before `session.close()`
+    previous = info.get("ignore_tables", ())
+
     try:
+        # Set the ignore_tables from the `ignore_tables` param, for session block
+        info["ignore_tables"] = set(ignore_tables)
         # Yield the session object to be used in the with statement
         yield session
         # When session exits scope without exception, the session is commited
