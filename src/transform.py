@@ -3,16 +3,6 @@ from uuid import uuid4 as get_uuid
 from src.extract import csv_import
 
 
-# Deduplicates the products list so we are left with a list of unique products
-def _deduplicate_products(li: list) -> list:
-
-    # The dictionary is encoded serialized into json formar and placed into a
-    # set which cannot contain duplicate entries
-    # Each json string is then transformed back into a dictionary and returned
-    dumped_set = set([json.dumps(d, sort_keys=True) for d in li])
-    return [json.loads(s) for s in dumped_set]
-
-
 def _basket(order: list) -> list:
     """
     Split the orders section of a transaction into a list of dict containing
@@ -93,6 +83,7 @@ def get_raw_transactions() -> list:
                 "basket": basket,
                 "datetime": row["Timestamp"],
                 "location": row["Location"],
+                "payment_type": row["Payment Type"],
             }
         )
 
