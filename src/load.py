@@ -67,25 +67,21 @@ def get_locations(transactions: list) -> list:
 def get_basket_items(session, transactions: list) -> list:
     basket_items = []
     for d in transactions:
-        basket_items += (
-            x
-            for x in set(
-                BasketItem(
-                    id=str(get_uuid()),
-                    transaction_id=d["id"],
-                    product_id=session.query(Product.id)
-                    .filter_by(
-                        name=b["name"],
-                        flavour=b["flavour"],
-                        size=b["size"],
-                        iced=b["iced"],
-                    )
-                    .as_scalar(),
-                    quantity=d["basket"].count(b),
+        basket_items += [
+            BasketItem(
+                id=str(get_uuid()),
+                transaction_id=d["id"],
+                product_id=session.query(Product.id)
+                .filter_by(
+                    name=b["name"],
+                    flavour=b["flavour"],
+                    size=b["size"],
+                    iced=b["iced"],
                 )
-                for b in d["basket"]
+                .as_scalar(),
             )
-        )
+            for b in d["basket"]
+        ]
 
     return basket_items
 
@@ -96,6 +92,8 @@ def get_transactions(session, raw_transactions: list) -> list:
             id=d["id"],
             datetime=d["datetime"],
             payment_type=PaymentType.from_str(d["payment_type"]),
+            card_details=d["card_details"],
+            transaction_total=d["transaction_total"],
             location_id=session.query(Location.id)
             .filter_by(name=d["location"])
             .as_scalar(),

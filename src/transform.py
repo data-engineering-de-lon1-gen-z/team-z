@@ -77,6 +77,9 @@ def get_raw_transactions() -> list:
         order = row["Orders"].split(",")
         basket = _basket(order)
 
+        all_card_details = row["Card Details"].split(",")
+        card_details = all_card_details[0]
+
         transactions.append(
             {
                 "id": str(get_uuid()),
@@ -84,6 +87,8 @@ def get_raw_transactions() -> list:
                 "datetime": row["Timestamp"],
                 "location": row["Location"],
                 "payment_type": row["Payment Type"],
+                "transaction_total": row["Cost"],
+                "card_details": card_details,
             }
         )
 
