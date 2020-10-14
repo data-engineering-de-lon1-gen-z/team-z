@@ -96,6 +96,7 @@ def get_transactions(session, raw_transactions: list) -> list:
             id=d["id"],
             datetime=d["datetime"],
             payment_type=PaymentType.from_str(d["payment_type"]),
+            card_details=d["card_details"],
             location_id=session.query(Location.id)
             .filter_by(name=d["location"])
             .as_scalar(),

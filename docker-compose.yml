@@ -20,7 +20,6 @@ services:
       - db-data:/var/lib/mysql
     ports:
       - 33066:3306
-
   grafana:
     image: grafana/grafana
     volumes:
