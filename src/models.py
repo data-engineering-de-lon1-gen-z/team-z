@@ -35,7 +35,7 @@ class PaymentType(enum.Enum):
 
 class Product(Base):
     __tablename__ = "product"
-    id = Column(string(36), primary_key=True)
+    id = Column(String(36), primary_key=True)
     name = Column(String(255), nullable=False)
     size = Column(String(255), nullable=False)
     flavour = Column(String(255), nullable=False)
@@ -48,7 +48,7 @@ class Product(Base):
 class Location(Base):
     __tablename__ = "location"
 
-    id = Column(string(36), primary_key=True)
+    id = Column(String(36), primary_key=True)
     name = Column(String(255), unique=True, nullable=False)
     transactions = relationship("Transaction")
 
@@ -56,10 +56,9 @@ class Location(Base):
 class BasketItem(Base):
     __tablename__ = "basket"
 
-    id = Column(string(36), primary_key=True)
-    transaction_id = Column(string(36), ForeignKey("transaction.id"), nullable=False)
-    product_id = Column(string(36), ForeignKey("product.id"), nullable=False)
-    quantity = Column(Integer, nullable=False)
+    id = Column(String(36), primary_key=True)
+    transaction_id = Column(String(36), ForeignKey("transaction.id"), nullable=False)
+    product_id = Column(String(36), ForeignKey("product.id"), nullable=False)
     transaction = relationship(
         "Transaction",
         backref=backref("basket", uselist=True),
@@ -71,9 +70,10 @@ class BasketItem(Base):
 class Transaction(Base):
     __tablename__ = "transaction"
 
-    id = Column(string(36), primary_key=True)
+    id = Column(String(36), primary_key=True)
     datetime = Column(DateTime, nullable=False)
     payment_type = Column(Enum(PaymentType), nullable=False)
-    card_details = Column(String(36), nullable=True)
+    card_details = Column(String(255), nullable=True)
+    transaction_total = Column(DECIMAL(4, 2), nullable=False)
     location_id = Column(String(36), ForeignKey("location.id"), nullable=False)
 
