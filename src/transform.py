@@ -76,7 +76,7 @@ def get_raw_transactions() -> list:
         # `get_basket()` function
         order = row["Orders"].split(",")
         basket = _basket(order)
-
+         
         all_card_details = row["Card Details"].split(",")
         card_details = all_card_details[0]
 
@@ -87,6 +87,10 @@ def get_raw_transactions() -> list:
                 "datetime": row["Timestamp"],
                 "location": row["Location"],
                 "payment_type": row["Payment Type"],
+<<<<<<< HEAD
+=======
+                "transaction_total": row["Cost"],
+>>>>>>> 66d8ba0... new transaction total and deletion of bar_chart, queries
                 "card_details": card_details
             }
         )
