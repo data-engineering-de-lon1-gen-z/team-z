@@ -73,12 +73,11 @@ def get_raw_transactions() -> list:
 
     for row in csv_import:
         # Split the comma delimited order section and pass that into the
-        # `get_basket()` function
+        # `_basket()` function
         order = row["Orders"].split(",")
         basket = _basket(order)
 
-        all_card_details = row["Card Details"].split(",")
-        card_details = all_card_details[0]
+        card_details = row["Card Details"].split(",")[0]
 
         transactions.append(
             {
@@ -87,7 +86,8 @@ def get_raw_transactions() -> list:
                 "datetime": row["Timestamp"],
                 "location": row["Location"],
                 "payment_type": row["Payment Type"],
-                "card_details": card_details
+                "transaction_total": row["Cost"],
+                "card_details": None if card_details == "None" else card_details,
             }
         )
 
