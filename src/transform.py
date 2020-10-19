@@ -76,9 +76,6 @@ def get_raw_transactions() -> list:
         # `_basket()` function
         order = row["Orders"].split(",")
         basket = _basket(order)
-         
-        all_card_details = row["Card Details"].split(",")
-        card_details = all_card_details[0]
 
         card_details = row["Card Details"].split(",")[0]
 
