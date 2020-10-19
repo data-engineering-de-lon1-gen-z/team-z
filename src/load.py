@@ -25,8 +25,8 @@ def _deduplicate_products(li: list) -> list:
     # The dictionary is encoded serialized into json formar and placed into a
     # set which cannot contain duplicate entries
     # Each json string is then transformed back into a dictionary and returned
-    dumped_set = set([json.dumps(d, sort_keys=True) for d in li])
-    return [json.loads(s) for s in dumped_set]
+    dumped_set = set([json.dumps(product, sort_keys=True) for product in li])
+    return [json.loads(product) for product in dumped_set]
 
 
 def get_unique_products(transactions: list) -> list:
@@ -41,9 +41,13 @@ def get_unique_products(transactions: list) -> list:
     """
 
     return [
-        Product(**dict(d, **{"id": str(get_uuid())}))
-        for d in _deduplicate_products(
-            list(chain.from_iterable([d["basket"] for d in transactions]))
+        Product(**dict(product, **{"id": str(get_uuid())}))
+        for product in _deduplicate_products(
+            list(
+                chain.from_iterable(
+                    [transaction["basket"] for transaction in transactions]
+                )
+            )
         )
     ]
 
@@ -61,46 +65,46 @@ def get_locations(transactions: list) -> list:
 
     locations = [
         Location(id=str(get_uuid()), name=location)
-        for location in set(d["location"] for d in transactions)
+        for location in set(transaction["location"] for transaction in transactions)
     ]
     return locations
 
 
 def get_basket_items(session, transactions: list) -> list:
     basket_items = []
-    for d in transactions:
+    for transaction in transactions:
         basket_items += [
             BasketItem(
                 id=str(get_uuid()),
-                transaction_id=d["id"],
+                transaction_id=transaction["id"],
                 product_id=session.query(Product.id)
                 .filter_by(
-                    name=b["name"],
-                    flavour=b["flavour"],
-                    size=b["size"],
-                    iced=b["iced"],
+                    name=basket_item["name"],
+                    flavour=basket_item["flavour"],
+                    size=basket_item["size"],
+                    iced=basket_item["iced"],
                 )
                 .as_scalar(),
             )
-            for b in d["basket"]
+            for basket_item in transaction["basket"]
         ]
 
     return basket_items
 
 
-def get_transactions(session, raw_transactions: list) -> list:
+def get_transactions(session, transactions: list) -> list:
     return [
         Transaction(
-            id=d["id"],
-            datetime=d["datetime"],
-            payment_type=PaymentType.from_str(d["payment_type"]),
-            card_details=d["card_details"],
-            transaction_total=d["transaction_total"],
+            id=transaction["id"],
+            datetime=transaction["datetime"],
+            payment_type=PaymentType.from_str(transaction["payment_type"]),
+            card_details=transaction["card_details"],
+            transaction_total=transaction["transaction_total"],
             location_id=session.query(Location.id)
-            .filter_by(name=d["location"])
+            .filter_by(name=transaction["location"])
             .as_scalar(),
         )
-        for d in raw_transactions
+        for transaction in transactions
     ]
 
 
