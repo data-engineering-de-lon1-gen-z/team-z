@@ -22,7 +22,7 @@ Session = sessionmaker(bind=engine)
 # Deduplicates the products list so we are left with a list of unique products
 def _deduplicate_products(li: list) -> list:
 
-    # The dictionary is encoded serialized into json formar and placed into a
+    # The dictionary is encoded serialized into json format and placed into a
     # set which cannot contain duplicate entries
     # Each json string is then transformed back into a dictionary and returned
     dumped_set = set([json.dumps(product, sort_keys=True) for product in li])
@@ -70,6 +70,19 @@ def get_locations(transactions: list) -> list:
     return locations
 
 
+def _get_existing_product_id(session, basket_item: dict) -> str:
+    return (
+        session.query(Product.id)
+        .filter_by(
+            name=basket_item["name"],
+            flavour=basket_item["flavour"],
+            size=basket_item["size"],
+            iced=basket_item["iced"],
+        )
+        .as_scalar()
+    )
+
+
 def get_basket_items(session, transactions: list) -> list:
     basket_items = []
     for transaction in transactions:
@@ -77,19 +90,18 @@ def get_basket_items(session, transactions: list) -> list:
             BasketItem(
                 id=str(get_uuid()),
                 transaction_id=transaction["id"],
-                product_id=session.query(Product.id)
-                .filter_by(
-                    name=basket_item["name"],
-                    flavour=basket_item["flavour"],
-                    size=basket_item["size"],
-                    iced=basket_item["iced"],
-                )
-                .as_scalar(),
+                product_id=_get_existing_product_id(session, basket_item),
             )
             for basket_item in transaction["basket"]
         ]
 
     return basket_items
+
+
+def _get_existing_location_id(session, transaction: dict) -> str:
+    return (
+        session.query(Location.id).filter_by(name=transaction["location"]).as_scalar()
+    )
 
 
 def get_transactions(session, transactions: list) -> list:
@@ -100,9 +112,7 @@ def get_transactions(session, transactions: list) -> list:
             payment_type=PaymentType.from_str(transaction["payment_type"]),
             card_details=transaction["card_details"],
             transaction_total=transaction["transaction_total"],
-            location_id=session.query(Location.id)
-            .filter_by(name=transaction["location"])
-            .as_scalar(),
+            location_id=_get_existing_location_id(session, transaction),
         )
         for transaction in transactions
     ]
