@@ -11,9 +11,11 @@ from sqlalchemy.sql import Insert
 
 from src.models import Base, Product, Location, BasketItem, PaymentType, Transaction
 
-# TODO from src.config import MYSQL_HOST, MYSQL_PORT, MYSQL_USER, MYSQL_PASSWORD
+from src.config import MYSQL_HOST, MYSQL_PORT, MYSQL_USER, MYSQL_SECRET, MYSQL_DB
 
-engine: Engine = create_engine("mysql+pymysql://root:password@localhost:33066/dev")
+engine: Engine = create_engine(
+    f"mysql+pymysql://{MYSQL_USER}:{MYSQL_SECRET}@{MYSQL_HOST}:{MYSQL_PORT}/{MYSQL_DB}"
+)
 Session = sessionmaker(bind=engine)
 
 

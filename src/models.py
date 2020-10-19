@@ -76,3 +76,4 @@ class Transaction(Base):
     card_details = Column(String(255), nullable=True)
     transaction_total = Column(DECIMAL(4, 2), nullable=False)
     location_id = Column(String(36), ForeignKey("location.id"), nullable=False)
+
