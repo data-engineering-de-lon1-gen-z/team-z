@@ -10,8 +10,8 @@ from sqlalchemy_utils import database_exists, create_database
 from sqlalchemy.sql import Insert
 
 from src.models import Base, Product, Location, BasketItem, PaymentType, Transaction
-
 from src.config import MYSQL_HOST, MYSQL_PORT, MYSQL_USER, MYSQL_SECRET, MYSQL_DB
+from src.cache import cache
 
 engine: Engine = create_engine(
     f"mysql+pymysql://{MYSQL_USER}:{MYSQL_SECRET}@{MYSQL_HOST}:{MYSQL_PORT}/{MYSQL_DB}"
@@ -71,16 +71,27 @@ def get_locations(transactions: list) -> list:
 
 
 def _get_existing_product_id(session, basket_item: dict) -> str:
-    return (
-        session.query(Product.id)
-        .filter_by(
-            name=basket_item["name"],
-            flavour=basket_item["flavour"],
-            size=basket_item["size"],
-            iced=basket_item["iced"],
-        )
-        .as_scalar()
+    # Construct a key for the cache dictionary
+    query_cache_key = ", ".join(
+        (str(basket_item[key]) for key in ["name", "flavour", "size", "iced"])
     )
+    # Attempt to retrieve the id from the cache
+    result = cache.get(query_cache_key)
+    if not result:
+        # The query result isn't cached, so execute the query for the ID and add it to the cache
+        result = (
+            session.query(Product.id)
+            .filter_by(
+                name=basket_item["name"],
+                flavour=basket_item["flavour"],
+                size=basket_item["size"],
+                iced=basket_item["iced"],
+            )
+            .one()[0]
+        )
+        cache.add(query_cache_key, result)
+
+    return result
 
 
 def get_basket_items(session, transactions: list) -> list:
@@ -99,9 +110,16 @@ def get_basket_items(session, transactions: list) -> list:
 
 
 def _get_existing_location_id(session, transaction: dict) -> str:
-    return (
-        session.query(Location.id).filter_by(name=transaction["location"]).as_scalar()
-    )
+    query_cache_key = str(transaction["location"])
+
+    result = cache.get(query_cache_key)
+    if not result:
+        result = (
+            session.query(Location.id).filter_by(name=transaction["location"]).one()[0]
+        )
+        cache.add(query_cache_key, result)
+
+    return result
 
 
 def get_transactions(session, transactions: list) -> list:
