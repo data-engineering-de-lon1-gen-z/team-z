@@ -11,8 +11,7 @@ def read_csv(file_name):
         reader = list(csv.DictReader(csvfile, fieldnames = ('Timestamp', 'Location', 'Name', 'Orders','Payment Type','Cost','Card Details')))
     return reader
 
-if __name__ == "__main__":  
-    print(read_csv('2020-10-01.csv'))
+csv_import = read_csv("2020-10-21-South-Bank.csv")
 
 
 # Fetches the csv file from the S3 bucket
