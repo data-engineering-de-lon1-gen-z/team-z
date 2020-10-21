@@ -1,3 +1,4 @@
+import time
 import json
 from uuid import uuid4 as get_uuid
 
@@ -82,7 +83,9 @@ def get_raw_transactions(data) -> list:
             {
                 "id": str(get_uuid()),
                 "basket": basket,
-                "datetime": row["Timestamp"],
+                "datetime": int(
+                    time.mktime(time.strptime(row["Timestamp"], "%Y-%m-%d %H:%M:%S"))
+                ),
                 "location": row["Location"],
                 "payment_type": row["Payment Type"],
                 "transaction_total": row["Cost"],
