@@ -135,7 +135,6 @@ def get_transactions(session, transactions: list) -> list:
         for transaction in transactions
     ]
 
-
 # Listens for any before_execute event from SQLAlchemy
 @event.listens_for(Engine, "before_execute", retval=True)
 def _ignore_duplicate(conn, element, multiparams, params):
