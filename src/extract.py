@@ -1,18 +1,22 @@
 import os
-import pandas as pd
+import csv
+#import pandas as pd
 
 # TODO Add S3 bucket url to .env
 #s3_base_url = os.environ["S3_BASE_URL"]
 
-
 # Function to convert CSV files to list of dictionaries
-def csv_to_dict(file, headers):
-    df = pd.read_csv(file, names=headers, engine='python')
-    my_dict = df.to_dict(orient='records')
-    return my_dict
+def read_csv_as_dict(file_name):
+    data = []
+    with open(file_name) as csvfile: #opens csv file and says that every new line is just "" aka a space (stops new lines in between rows)
+        reader = csv.DictReader(csvfile, fieldnames = ('Timestamp', 'Location', 'Name', 'Orders','Payment Type','Cost','Card Details'))
+        for row in reader: #for every row of information in the csv file, it updates the dictionary data, with the row in the format
+            data.append(row)
+    return data
 
-headers = ['Timestamp', 'Location', 'Name', 'Orders', 'Payment Type', 'Cost', 'Card Details']
-csv_import = csv_to_dict('2020-10-01.csv', headers)
+
+if __name__ == "__main__":  
+    print(read_csv_as_dict('2020-10-01.csv'))
 
 
 # Fetches the csv file from the S3 bucket
