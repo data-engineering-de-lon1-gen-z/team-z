@@ -1,7 +1,8 @@
 import json
 from uuid import uuid4 as get_uuid
-from src.extract import csv_import
+from src.extract import read_csv 
 
+csv_import = read_csv("2020-10-01.csv")
 
 def _basket(order: list) -> list:
     """
@@ -57,7 +58,7 @@ def _basket(order: list) -> list:
     return result
 
 
-def get_raw_transactions() -> list:
+def get_raw_transactions(data) -> list:
     """
     Transform and clean the raw data from the CSV file into a list of transactions
     in which we are able to find unique products and locations. Each transaction
@@ -71,7 +72,7 @@ def get_raw_transactions() -> list:
 
     transactions = []  # Each transaction contains a basket
 
-    for row in csv_import:
+    for row in data:
         # Split the comma delimited order section and pass that into the
         # `_basket()` function
         order = row["Orders"].split(",")
@@ -95,6 +96,8 @@ def get_raw_transactions() -> list:
 
 
 if __name__ == "__main__":
-    transactions = get_raw_transactions()
+    transactions = get_raw_transactions(csv_import)
     print(f"Number of transactions: {len(transactions)}")
-
+    
+    
+    
