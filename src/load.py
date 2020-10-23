@@ -10,8 +10,8 @@ from sqlalchemy_utils import database_exists, create_database
 from sqlalchemy.sql import Insert
 
 from src.models import Base, Product, Location, BasketItem, PaymentType, Transaction
-
 from src.config import MYSQL_HOST, MYSQL_PORT, MYSQL_USER, MYSQL_SECRET, MYSQL_DB
+from src.cache import cache
 
 engine: Engine = create_engine(
     f"mysql+pymysql://{MYSQL_USER}:{MYSQL_SECRET}@{MYSQL_HOST}:{MYSQL_PORT}/{MYSQL_DB}"
@@ -22,11 +22,11 @@ Session = sessionmaker(bind=engine)
 # Deduplicates the products list so we are left with a list of unique products
 def _deduplicate_products(li: list) -> list:
 
-    # The dictionary is encoded serialized into json formar and placed into a
+    # The dictionary is encoded serialized into json format and placed into a
     # set which cannot contain duplicate entries
     # Each json string is then transformed back into a dictionary and returned
-    dumped_set = set([json.dumps(d, sort_keys=True) for d in li])
-    return [json.loads(s) for s in dumped_set]
+    dumped_set = set([json.dumps(product, sort_keys=True) for product in li])
+    return [json.loads(product) for product in dumped_set]
 
 
 def get_unique_products(transactions: list) -> list:
@@ -41,9 +41,13 @@ def get_unique_products(transactions: list) -> list:
     """
 
     return [
-        Product(**dict(d, **{"id": str(get_uuid())}))
-        for d in _deduplicate_products(
-            list(chain.from_iterable([d["basket"] for d in transactions]))
+        Product(**dict(product, **{"id": str(get_uuid())}))
+        for product in _deduplicate_products(
+            list(
+                chain.from_iterable(
+                    [transaction["basket"] for transaction in transactions]
+                )
+            )
         )
     ]
 
@@ -61,48 +65,75 @@ def get_locations(transactions: list) -> list:
 
     locations = [
         Location(id=str(get_uuid()), name=location)
-        for location in set(d["location"] for d in transactions)
+        for location in set(transaction["location"] for transaction in transactions)
     ]
     return locations
 
 
+def _get_existing_product_id(session, basket_item: dict) -> str:
+    # Construct a key for the cache dictionary
+    query_cache_key = ", ".join(
+        (str(basket_item[key]) for key in ["name", "flavour", "size", "iced"])
+    )
+    # Attempt to retrieve the id from the cache
+    result = cache.get(query_cache_key)
+    if not result:
+        # The query result isn't cached, so execute the query for the ID and add it to the cache
+        result = (
+            session.query(Product.id)
+            .filter_by(
+                name=basket_item["name"],
+                flavour=basket_item["flavour"],
+                size=basket_item["size"],
+                iced=basket_item["iced"],
+            )
+            .one()[0]
+        )
+        cache.add(query_cache_key, result)
+
+    return result
+
+
 def get_basket_items(session, transactions: list) -> list:
     basket_items = []
-    for d in transactions:
+    for transaction in transactions:
         basket_items += [
             BasketItem(
                 id=str(get_uuid()),
-                transaction_id=d["id"],
-                product_id=session.query(Product.id)
-                .filter_by(
-                    name=b["name"],
-                    flavour=b["flavour"],
-                    size=b["size"],
-                    iced=b["iced"],
-                )
-                .as_scalar(),
+                transaction_id=transaction["id"],
+                product_id=_get_existing_product_id(session, basket_item),
             )
-            for b in d["basket"]
+            for basket_item in transaction["basket"]
         ]
 
     return basket_items
 
 
-def get_transactions(session, raw_transactions: list) -> list:
+def _get_existing_location_id(session, transaction: dict) -> str:
+    query_cache_key = str(transaction["location"])
+
+    result = cache.get(query_cache_key)
+    if not result:
+        result = (
+            session.query(Location.id).filter_by(name=transaction["location"]).one()[0]
+        )
+        cache.add(query_cache_key, result)
+
+    return result
+
+
+def get_transactions(session, transactions: list) -> list:
     return [
         Transaction(
-            id=d["id"],
-            datetime=d["datetime"],
-            payment_type=PaymentType.from_str(d["payment_type"]),
-            card_details=d["card_details"],
-            transaction_total=d["transaction_total"],
-            location_id=session.query(Location.id)
-            .filter_by(name=d["location"])
-            .as_scalar(),
+            id=transaction["id"],
+            datetime=transaction["datetime"],
+            payment_type=PaymentType.from_str(transaction["payment_type"]),
+            card_details=transaction["card_details"],
+            transaction_total=transaction["transaction_total"],
+            location_id=_get_existing_location_id(session, transaction),
         )
-        for d in raw_transactions
+        for transaction in transactions
     ]
-
 
 # Listens for any before_execute event from SQLAlchemy
 @event.listens_for(Engine, "before_execute", retval=True)

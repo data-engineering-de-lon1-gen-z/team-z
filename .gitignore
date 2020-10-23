@@ -8,3 +8,6 @@ __pycache__
 .env
 
 *.csv
+
+node_modules/
+.serverless/

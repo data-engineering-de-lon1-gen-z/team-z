@@ -1,0 +1,61 @@
+service: genz-serverless
+frameworkVersion: '2'
+
+plugins:
+  - serverless-dotenv-plugin
+  - serverless-python-requirements
+
+provider:
+  name: aws
+  runtime: python3.8
+  profile: learner
+  stage: dev
+  region: eu-west-1
+
+  role: arn:aws:iam::353676217514:role/LambdaExecuteRole        
+      
+  vpc:
+    securityGroupIds:
+      - sg-022819bef83110bea
+    subnetIds:
+      - subnet-0f37ee489a186d9a5
+      - subnet-0240f67155c6bd934
+      - subnet-0ca1a4a748dc923ee
+
+functions:
+  etl:
+    handler: src.lambda.handler
+    memorySize: 256
+    timeout: 120
+    events:
+      - s3:
+          bucket: ${env:BUCKET}
+          event: s3:ObjectCreated:*
+          rules:
+            - prefix: incoming/
+            - suffix: .csv
+
+package:
+  exclude:
+    - node_modules/**
+    - .direnv/**
+    - .git/**
+    - .gitignore
+    - .pytest_cache/**
+    - tests/**
+    - docker-compose.yml
+    - .env.template
+    - json_model_grafana.json
+    - "*.csv"
+
+# you can add CloudFormation resource templates here
+#resources:
+#  Resources:
+#    NewResource:
+#      Type: AWS::S3::Bucket
+#      Properties:
+#        BucketName: my-new-bucket
+#  Outputs:
+#     NewOutput:
+#       Description: "Description for the output"
+#       Value: "Some output value"
