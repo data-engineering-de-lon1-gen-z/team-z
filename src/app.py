@@ -1,5 +1,3 @@
-import boto3
-
 from src.extract import read_csv
 from src.transform import get_raw_transactions
 from src.load import (
@@ -12,24 +10,23 @@ from src.load import (
     insert_many,
 )
 
-
-def entrypoint(bucket, file_path):
-    s3 = boto3.client("s3")
-    f = s3.get_object(Bucket=bucket, Key=file_path)
-    # Read the data as UTF-8 and split at newline char
-    raw = f["Body"].read().decode("utf-8").splitlines()
-    main(raw)
+import json
 
 
 # Entrypoint to the app from a lambda, takes the bucket and path to csv file
-def main(raw):
+def entrypoint(lines):
     # TODO Handle exceptions in file reading
-    data = read_csv(raw)
+    print("Reading csv")
+    data = read_csv(lines)
 
+    print("Cleaning transactions")
     transactions = get_raw_transactions(data)
+    print("Unique products")
     products = get_unique_products(transactions)
+    print("Unique locations")
     locations = get_locations(transactions)
 
+    print("Initialize db")
     init()
     with session_context_manager(ignore_tables=["location", "product"]) as session:
         insert_many(session, products, locations)
@@ -43,7 +40,7 @@ def main(raw):
 if __name__ == "__main__":
     raw = None
     with open("/home/matt/Downloads/files/2020-10-20-Westminster.csv", "r") as f:
-        raw = f.read().splitlines()
+        lines = f.read().splitlines()
 
     # Make sure we are closing the file before processing the ETL
-    main(raw)
+    entrypoint(lines)
