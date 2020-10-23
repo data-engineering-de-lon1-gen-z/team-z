@@ -10,11 +10,9 @@ COLUMN_HEADERS = [
     "Card Details",
 ]
 
-
 def read_csv(f):
     reader = DictReader(f, fieldnames=COLUMN_HEADERS)
     return list(reader)
-
 
 if __name__ == "__main__":
     with open("2020-10-01.csv", "r") as f:
