@@ -7,7 +7,6 @@ from sqlalchemy import (
     DECIMAL,
     Boolean,
     Enum,
-    DateTime,
     ForeignKey,
     UniqueConstraint,
 )
@@ -71,9 +70,8 @@ class Transaction(Base):
     __tablename__ = "transaction"
 
     id = Column(String(36), primary_key=True)
-    datetime = Column(DateTime, nullable=False)
+    datetime = Column(Integer, nullable=False)
     payment_type = Column(Enum(PaymentType), nullable=False)
     card_details = Column(String(255), nullable=True)
     transaction_total = Column(DECIMAL(4, 2), nullable=False)
     location_id = Column(String(36), ForeignKey("location.id"), nullable=False)
-
