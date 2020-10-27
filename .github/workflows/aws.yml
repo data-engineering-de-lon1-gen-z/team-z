@@ -20,7 +20,7 @@ jobs:
         node-version: ${{ matrix.node-version }}
     - run: npm ci
     - name: serverless deploy
-      uses: jackdcasey/github-action@python3.8-nodejs13
+      uses: data-engineering-de-lon1-gen-z/github-action@master
       with:
         args: deploy
       env:
