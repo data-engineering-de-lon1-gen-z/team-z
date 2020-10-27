@@ -18,8 +18,8 @@ provider:
     securityGroupIds:
       - sg-022819bef83110bea
     subnetIds:
-      - subnet-0f37ee489a186d9a5
-      - subnet-0240f67155c6bd934
+      #- subnet-0f37ee489a186d9a5
+      #- subnet-0240f67155c6bd934
       - subnet-0ca1a4a748dc923ee
 
 functions:
@@ -27,6 +27,8 @@ functions:
     handler: src.lambda.handler
     memorySize: 256
     timeout: 120
+    # Avoid concurrent Lambda invocations or else we can get race condition when writing to RDS
+    reservedConcurrency: 1
     events:
       - s3:
           bucket: ${env:BUCKET}
