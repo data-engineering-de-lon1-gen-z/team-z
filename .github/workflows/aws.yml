@@ -26,11 +26,10 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
 
-    - name: Install node modules
-      run: npm ci
-
-    - name: Deploy
-      run: serverless deploy
+    - name: Node + Serverless deploy
+      run: |
+        npm ci
+        serverless deploy
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
