@@ -7,19 +7,19 @@ on:
 
 jobs:
   deploy:
-    - name: Deploy
+    name: deploy
       runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout
+    - name: checkout
       uses: actions/checkout@v2
 
-    - name: Configure AWS credentials
+    - name: configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v1
       with:
         python-version: ${{ matrix.python-versiom}}
         
-    - name: Use Node ${{matrix.node-version }} 
+    - name: use node ${{matrix.node-version }} 
       uses: actions/setup-node@v1
       with:
         python-version: ${{ matrix.node-versiom}}
