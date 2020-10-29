@@ -94,8 +94,3 @@ def get_raw_transactions(data) -> list:
         )
 
     return transactions
-
-
-if __name__ == "__main__":
-    transactions = get_raw_transactions()
-    print(f"Number of transactions: {len(transactions)}")
