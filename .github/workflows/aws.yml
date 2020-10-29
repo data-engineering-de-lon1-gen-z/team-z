@@ -8,24 +8,29 @@ on:
 jobs:
   deploy:
     name: deploy
-      runs-on: ubuntu-latest
-
+    runs-on: ubuntu-latest
+    strategy: 
+      matrix:
+        node-version: [12.x]
+        python-version: [3.8]
     steps:
-    - name: checkout
-      uses: actions/checkout@v2
+    - uses: actions/checkout@v2
 
-    - name: configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v1
+    - name: Use Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
       with:
-        python-version: ${{ matrix.python-versiom}}
+        python-version: ${{ matrix.python-version }}
         
-    - name: use node ${{matrix.node-version }} 
+    - name: use Node.js ${{ matrix.node-version }} 
       uses: actions/setup-node@v1
       with:
-        python-version: ${{ matrix.node-versiom}}
+        python-version: ${{ matrix.node-version }}
 
-    - run: npm ci
-    - run: serverless deploy 
+    - name: Install node modules 
+      run: npm ci
+
+    - name: Deploy 
+    - run: npx serverless deploy 
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
