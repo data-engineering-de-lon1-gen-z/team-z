@@ -27,8 +27,6 @@ services:
     ports:
       - 8000:3000
 
-
-
     
 volumes:
   db-data:

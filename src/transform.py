@@ -76,9 +76,6 @@ def get_raw_transactions(data) -> list:
         # `_basket()` function
         order = row["Orders"].split(",")
         basket = _basket(order)
-         
-        all_card_details = row["Card Details"].split(",")
-        card_details = all_card_details[0]
 
         card_details = row["Card Details"].split(",")[0]
 
@@ -91,7 +88,6 @@ def get_raw_transactions(data) -> list:
                 ),
                 "location": row["Location"],
                 "payment_type": row["Payment Type"],
-
                 "transaction_total": row["Cost"],
                 "card_details": None if card_details == "None" else card_details,
             }
