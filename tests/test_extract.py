@@ -7,7 +7,7 @@ single_line_raw_csv = [
 
 def test_read_csv():
     actual = read_csv(single_line_raw_csv)
-    expected = {
+    expected = [{
         "Timestamp": "2020-10-01 16:59:00",
         "Location": "Isle of Wight",
         "Name": "Carol Field",
@@ -15,5 +15,5 @@ def test_read_csv():
         "Payment Type": "CARD",
         "Cost": "4.55",
         "Card Details": "americanexpress,352673943791481",
-    }
+    }]
     assert actual == expected
