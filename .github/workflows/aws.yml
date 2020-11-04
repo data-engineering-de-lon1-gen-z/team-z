@@ -1,4 +1,4 @@
-name: Deploy to service
+name: Serverless deploy
 
 on:
   push:
@@ -24,7 +24,7 @@ jobs:
     - name: use Node.js ${{ matrix.node-version }} 
       uses: actions/setup-node@v1
       with:
-        python-version: ${{ matrix.node-version }}
+        node-version: ${{ matrix.node-version }}
 
     - name: Install node modules 
       run: npm ci
