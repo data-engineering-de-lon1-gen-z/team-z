@@ -26,8 +26,5 @@ services:
       - grafana-data:/var/lib/grafana
     ports:
       - 8000:3000
-
     
-volumes:
-  db-data:
-  grafana-data:
+
