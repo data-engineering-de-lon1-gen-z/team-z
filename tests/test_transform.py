@@ -52,8 +52,32 @@ expected_first_row_basket = [
         "iced": False,
     },
 ]
-# TODO What should the first transaction look like when transformed?
-expected_first_row_transaction = {}
+
+expected_first_row_transaction =  {
+    "id": "208e6031-3e31-4c4c-97b9-11413439d044", 
+    "basket": [{"name": "Mocha", "flavour": "", "size": "", "price": 2.3, "iced": False},
+    {"name": "Tea", "flavour": "Fruit", "size": "", "price": 1.3, "iced": False},
+    {"name": "Latte", "flavour": "Vanilla", "size": "", "price": 2.75, "iced": True},
+    {
+        "name": "Frappes",
+        "flavour": "Chocolate Cookie",
+        "size": "",
+        "price": 2.75,
+        "iced": False,
+    },
+    {
+        "name": "Filter Coffee",
+        "flavour": "",
+        "size": "Large",
+        "price": 1.8,
+        "iced": False,
+    }], 
+    "datetime": "2020-10-01 09:00:00", 
+    "location": "Isle of Wight",
+    "payment_type": "CARD",
+    "transaction_total": "10.90",
+    "card_details": "americanexpress"
+}
 
 
 def test_get_transactions():
