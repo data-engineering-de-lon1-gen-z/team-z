@@ -53,30 +53,38 @@ expected_first_row_basket = [
     },
 ]
 
-expected_first_row_transaction =  {
-    "id": "208e6031-3e31-4c4c-97b9-11413439d044", 
-    "basket": [{"name": "Mocha", "flavour": "", "size": "", "price": 2.3, "iced": False},
-    {"name": "Tea", "flavour": "Fruit", "size": "", "price": 1.3, "iced": False},
-    {"name": "Latte", "flavour": "Vanilla", "size": "", "price": 2.75, "iced": True},
-    {
-        "name": "Frappes",
-        "flavour": "Chocolate Cookie",
-        "size": "",
-        "price": 2.75,
-        "iced": False,
-    },
-    {
-        "name": "Filter Coffee",
-        "flavour": "",
-        "size": "Large",
-        "price": 1.8,
-        "iced": False,
-    }], 
-    "datetime": "2020-10-01 09:00:00", 
+expected_first_row_transaction = {
+    "id": "208e6031-3e31-4c4c-97b9-11413439d044",
+    "basket": [
+        {"name": "Mocha", "flavour": "", "size": "", "price": 2.3, "iced": False},
+        {"name": "Tea", "flavour": "Fruit", "size": "", "price": 1.3, "iced": False},
+        {
+            "name": "Latte",
+            "flavour": "Vanilla",
+            "size": "",
+            "price": 2.75,
+            "iced": True,
+        },
+        {
+            "name": "Frappes",
+            "flavour": "Chocolate Cookie",
+            "size": "",
+            "price": 2.75,
+            "iced": False,
+        },
+        {
+            "name": "Filter Coffee",
+            "flavour": "",
+            "size": "Large",
+            "price": 1.8,
+            "iced": False,
+        },
+    ],
+    "datetime": "2020-10-01 09:00:00",
     "location": "Isle of Wight",
     "payment_type": "CARD",
     "transaction_total": "10.90",
-    "card_details": "americanexpress"
+    "card_details": "americanexpress",
 }
 
 
@@ -87,10 +95,8 @@ def test_get_transactions():
         assert mock_get_uuid.call_count == 3
         # Ensure we get back exactly 3 transactions
         assert len(mocked_transactions) == 3
-        # Check the first item basket
-        assert mocked_transactions[0]["basket"] == expected_first_row_basket
-        # TODO
-        # assert mocked_transactions[0] == expected_first_row_transaction
+        # Ensure transaction we get back exactly what is expected
+        assert mocked_transactions[0] == expected_first_row_transaction
 
 
 def test__basket():
