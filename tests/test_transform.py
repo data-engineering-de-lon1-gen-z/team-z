@@ -1,3 +1,4 @@
+import datetime
 import unittest
 from src.extract import read_csv
 from unittest.mock import patch, Mock
@@ -80,7 +81,7 @@ expected_first_row_transaction = {
             "iced": False,
         },
     ],
-    "datetime": "2020-10-01 09:00:00",
+    "datetime": 1601539200,
     "location": "Isle of Wight",
     "payment_type": "CARD",
     "transaction_total": "10.90",
