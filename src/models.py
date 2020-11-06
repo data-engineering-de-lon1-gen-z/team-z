@@ -51,6 +51,9 @@ class Location(Base):
     name = Column(String(255), unique=True, nullable=False)
     transactions = relationship("Transaction")
 
+    def __eq__(self, other):
+        return self.id == other.id and self.name == other.name
+
 
 class BasketItem(Base):
     __tablename__ = "basket"
