@@ -1,7 +1,6 @@
-import datetime
 import unittest
 from src.extract import read_csv
-from unittest.mock import patch, Mock
+from unittest.mock import patch
 from src.transform import get_raw_transactions, get_uuid, _basket
 
 fake_uuid = "208e6031-3e31-4c4c-97b9-11413439d044"
@@ -54,6 +53,8 @@ expected_first_row_basket = [
     },
 ]
 
+sample_epoch = 1601539200
+
 expected_first_row_transaction = {
     "id": "208e6031-3e31-4c4c-97b9-11413439d044",
     "basket": [
@@ -81,7 +82,7 @@ expected_first_row_transaction = {
             "iced": False,
         },
     ],
-    "datetime": 1601539200,
+    "datetime": sample_epoch,
     "location": "Isle of Wight",
     "payment_type": "CARD",
     "transaction_total": "10.90",
@@ -89,15 +90,16 @@ expected_first_row_transaction = {
 }
 
 
-def test_get_transactions():
-    # get_uuid will always return fake_uuid
-    with patch("src.transform.get_uuid", return_value=fake_uuid) as mock_get_uuid:
-        mocked_transactions = get_raw_transactions(sample_data)
-        assert mock_get_uuid.call_count == 3
-        # Ensure we get back exactly 3 transactions
-        assert len(mocked_transactions) == 3
-        # Ensure transaction we get back exactly what is expected
-        assert mocked_transactions[0] == expected_first_row_transaction
+@patch("time.mktime", return_value=sample_epoch)
+@patch("src.transform.get_uuid", return_value=fake_uuid)
+def test_get_transactions(mock_get_uuid, mock_mktime):
+    mocked_transactions = get_raw_transactions(sample_data)
+    assert mock_get_uuid.call_count == 3
+    assert mock_mktime.call_count == len(sample_data)
+    # Ensure we get back exactly 3 transactions
+    assert len(mocked_transactions) == 3
+    # Ensure transaction we get back exactly what is expected
+    assert mocked_transactions[0] == expected_first_row_transaction
 
 
 def test__basket():
